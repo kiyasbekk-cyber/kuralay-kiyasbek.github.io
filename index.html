@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuralay Kiyasbek — Interpreter & Project Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0e0e0e;--paper:#f5f0e8;--gold:#c9a84c;--gold-light:#e8d5a3;--fade:#6b6560;--card:#161616;--border:rgba(201,168,76,0.18)}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--paper);font-family:'Cormorant Garamond',Georgia,serif;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");opacity:.035;pointer-events:none;z-index:1000}
+  nav{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;gap:2px;padding:1.2rem 1rem;z-index:100;background:linear-gradient(to bottom,rgba(14,14,14,.96) 60%,transparent)}
+  .lang-btn{background:none;border:none;color:var(--fade);font-family:inherit;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;padding:.4rem 1rem;transition:color .3s;position:relative}
+  .lang-btn::after{content:'';position:absolute;bottom:0;left:50%;right:50%;height:1px;background:var(--gold);transition:left .3s,right .3s}
+  .lang-btn:hover{color:var(--paper)}.lang-btn.active{color:var(--gold)}.lang-btn.active::after{left:1rem;right:1rem}
+  .panel{min-height:100vh;display:none;flex-direction:column;justify-content:center;padding:8rem 2rem 6rem;position:relative;opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  .panel.active{display:flex;opacity:1;transform:translateY(0)}.panel.visible{opacity:1;transform:translateY(0)}
+  .inner{max-width:860px;margin:0 auto;width:100%}
+  .deco-line{display:flex;align-items:center;gap:1rem;margin-bottom:2.5rem}
+  .deco-line span{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+  .deco-line::before{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,var(--gold));max-width:60px}
+  .deco-line::after{content:'';flex:1;height:1px;background:linear-gradient(to left,transparent,var(--gold));max-width:120px}
+  .greeting{font-size:clamp(3.5rem,10vw,7rem);font-weight:300;line-height:1;color:var(--paper);margin-bottom:.3rem}
+  .greeting em{font-style:italic;color:var(--gold)}
+  .name{font-size:clamp(1rem,2.5vw,1.4rem);font-weight:300;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-light);margin-bottom:2.5rem}
+  .intro-text{font-size:clamp(1.05rem,2vw,1.25rem);font-weight:300;line-height:1.9;color:var(--paper);opacity:.88;max-width:600px;margin-bottom:2.5rem}
+  .intro-text strong{font-weight:600;color:var(--gold-light)}
+  .details{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1.5rem 3rem;border-top:1px solid var(--border);padding-top:2rem;margin-bottom:2rem}
+  .detail-label{font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:.35rem}
+  .detail-value{font-size:1rem;font-weight:300;color:var(--paper);opacity:.85}
+  .tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2rem}
+  .tag{padding:.3rem .9rem;border:1px solid var(--border);font-size:.78rem;letter-spacing:.1em;color:var(--gold-light);background:rgba(201,168,76,.06);font-family:inherit}
+  .action-row{display:flex;flex-wrap:wrap;gap:.75rem}
+  .btn{padding:.65rem 1.6rem;font-family:inherit;font-size:.82rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold);background:transparent;color:var(--gold);transition:all .25s;text-decoration:none;display:inline-block}
+  .btn:hover{background:var(--gold);color:var(--bg)}.btn-solid{background:var(--gold);color:var(--bg)}.btn-solid:hover{background:var(--gold-light);border-color:var(--gold-light)}
+  .bg-char{position:fixed;top:50%;right:-.1em;transform:translateY(-50%);font-size:clamp(18rem,40vw,32rem);font-weight:300;color:rgba(201,168,76,.04);line-height:1;pointer-events:none;user-select:none;z-index:0}
+  .panel .inner{position:relative;z-index:1}
+  footer{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;padding:1rem;background:linear-gradient(to top,rgba(14,14,14,.9) 60%,transparent);z-index:100}
+  footer span{font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--fade)}
+  .zh .greeting,.zh .intro-text,.zh .detail-value,.zh .tag,.zh .name{font-family:'Noto Sans SC',serif}
+  .zh .greeting{font-size:clamp(3rem,9vw,6rem)}
+  .panel.visible .inner>*{animation:fadeUp .6s ease both}
+  .panel.visible .inner>*:nth-child(1){animation-delay:.05s}.panel.visible .inner>*:nth-child(2){animation-delay:.12s}
+  .panel.visible .inner>*:nth-child(3){animation-delay:.2s}.panel.visible .inner>*:nth-child(4){animation-delay:.28s}
+  .panel.visible .inner>*:nth-child(5){animation-delay:.36s}.panel.visible .inner>*:nth-child(6){animation-delay:.44s}
+  .panel.visible .inner>*:nth-child(7){animation-delay:.5s}.panel.visible .inner>*:nth-child(8){animation-delay:.56s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  /* LANG PROFICIENCY */
+  .lang-prof{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:2rem}
+  .lp-card{background:rgba(201,168,76,.05);border:1px solid var(--border);padding:1rem 1.2rem}
+  .lp-flag{font-size:1.4rem;margin-bottom:.4rem}
+  .lp-lang{font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
+  .lp-score-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+  .lp-score-name{font-size:.8rem;color:var(--paper);opacity:.7}
+  .lp-score-val{font-size:1rem;font-weight:400;color:var(--gold-light)}
+  .lp-bar-track{height:3px;background:rgba(201,168,76,.15);border-radius:2px;margin-bottom:.6rem}
+  .lp-bar-fill{height:100%;border-radius:2px;background:linear-gradient(to right,var(--gold),var(--gold-light))}
+  .lp-cert{font-size:.7rem;letter-spacing:.1em;color:var(--fade);margin-top:.5rem;border-top:1px solid var(--border);padding-top:.5rem}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+  .modal-overlay.open{display:flex}
+  .modal{background:#111;border:1px solid var(--border);max-width:760px;width:100%;max-height:88vh;overflow-y:auto;padding:2.5rem 2rem;position:relative;animation:fadeUp .35s ease}
+  .modal-close{position:absolute;top:1.2rem;right:1.4rem;background:none;border:none;color:var(--fade);font-size:1.4rem;cursor:pointer;transition:color .2s}
+  .modal-close:hover{color:var(--paper)}
+  .modal-title{font-size:1.6rem;font-weight:300;color:var(--gold);margin-bottom:2rem;letter-spacing:.05em}
+  .exp-item{margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}
+  .exp-item:last-child{border-bottom:none;margin-bottom:0}
+  .exp-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.3rem}
+  .exp-role{font-size:1.1rem;font-weight:400;color:var(--paper)}
+  .exp-period{font-size:.78rem;letter-spacing:.15em;color:var(--gold);white-space:nowrap}
+  .exp-org{font-size:.85rem;color:var(--fade);margin-bottom:.8rem;letter-spacing:.08em}
+  .exp-bullets{list-style:none;padding:0}
+  .exp-bullets li{font-size:.95rem;font-weight:300;color:var(--paper);opacity:.82;line-height:1.8;padding-left:1.2em;position:relative}
+  .exp-bullets li::before{content:'—';position:absolute;left:0;color:var(--gold)}
+  .exp-sub-title{font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin:1rem 0 .5rem}
+  .event-list{display:flex;flex-wrap:wrap;gap:.4rem}
+  .event-chip{font-size:.75rem;padding:.2rem .7rem;border:1px solid var(--border);color:var(--gold-light);opacity:.8}
+  .modal-lang-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+  .modal-tab{padding:.3rem .9rem;font-family:inherit;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--fade);transition:all .2s}
+  .modal-tab.active{border-color:var(--gold);color:var(--gold)}
+  .exp-lang-content{display:none}.exp-lang-content.active{display:block}
+
+  /* PHOTO GALLERY */
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;margin-top:.5rem}
+  .photo-item{position:relative;overflow:hidden;aspect-ratio:4/3;cursor:pointer}
+  .photo-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease,filter .4s ease;filter:brightness(.9) saturate(.85)}
+  .photo-item:hover img{transform:scale(1.05);filter:brightness(1) saturate(1)}
+  .photo-caption{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.82));padding:.6rem .7rem .5rem;font-size:.68rem;color:var(--gold-light);opacity:0;transition:opacity .3s;letter-spacing:.05em}
+  .photo-item:hover .photo-caption{opacity:1}
+
+  /* LIGHTBOX */
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:600;display:none;align-items:center;justify-content:center;flex-direction:column;gap:1rem}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:90vw;max-height:80vh;object-fit:contain}
+  .lightbox-caption{font-size:.8rem;color:var(--gold-light);letter-spacing:.1em;text-align:center}
+  .lightbox-close{position:fixed;top:1.5rem;right:1.5rem;background:none;border:none;color:var(--fade);font-size:1.8rem;cursor:pointer;z-index:601}
+  .lb-nav{position:fixed;top:50%;transform:translateY(-50%);background:none;border:1px solid var(--border);color:var(--gold);font-size:1.5rem;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+  .lb-nav:hover{background:var(--gold);color:var(--bg)}
+  #lb-prev{left:1rem}#lb-next{right:1rem}
+
+  @media(max-width:600px){.details{grid-template-columns:1fr 1fr}.greeting{font-size:3rem}.modal{padding:1.5rem 1rem}.photo-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="bg-char" id="bgChar">K</div>
+
+<nav>
+  <button class="lang-btn active" onclick="switchLang('en',this)">English</button>
+  <button class="lang-btn" onclick="switchLang('kk',this)">Қазақша</button>
+  <button class="lang-btn" onclick="switchLang('ru',this)">Русский</button>
+  <button class="lang-btn" onclick="switchLang('zh',this)">中文</button>
+</nav>
+
+<!-- ═══ ENGLISH ═══ -->
+<section class="panel en active" id="panel-en">
+  <div class="inner">
+    <div class="deco-line"><span>Introduction</span></div>
+    <h1 class="greeting">Hello, I'm<br><em>Kuralay Kiyasbek</em></h1>
+    <p class="name">IT Project Manager · Business Interpreter</p>
+    <p class="intro-text">
+      I am a <strong>professional interpreter and IT project manager</strong> fluent in
+      Kazakh, Chinese, Russian, and English. With experience spanning government forums,
+      international trade events, and tech startups, I bridge cultures and turn communication into results.
+    </p>
+    <div class="details">
+      <div class="detail-item"><div class="detail-label">Based in</div><div class="detail-value">Astana, Kazakhstan</div></div>
+      <div class="detail-item"><div class="detail-label">Languages</div><div class="detail-value">KK · ZH · RU · EN</div></div>
+      <div class="detail-item"><div class="detail-label">Education</div><div class="detail-value">Astana IT University</div></div>
+      <div class="detail-item"><div class="detail-label">Contact</div><div class="detail-value">kiyasbekk@gmail.com</div></div>
+    </div>
+
+    <!-- Language Proficiency -->
+    <div class="deco-line" style="margin-bottom:1.2rem"><span>Language Proficiency</span></div>
+    <div class="lang-prof">
+      <div class="lp-card">
+        <div class="lp-flag">🇰🇿</div>
+        <div class="lp-lang">Kazakh</div>
+        <div class="lp-score-row"><span class="lp-score-name">Native</span><span class="lp-score-val">Mother tongue</span></div>
+        <div class="lp-bar-track"><div class="lp-bar-fill" style="width:100%"></div></div>
+      </div>
+      <div class="lp-card">
+        <div class="lp-flag">🇨🇳</div>
+        <div class="lp-lang">Chinese (Mandarin)</div>
+        <div class="lp-score-row"><span class="lp-score-name">Overall</span><span class="lp-score-val">HSK 6 · 256/300</span></div>
+        <div class="lp-bar-track"><div class="lp-bar-fill" style="width:85%"></div></div>
+        <div class="lp-cert">Listening 90 · Reading 91 · Writing 75</div>
+      </div>
+      <div class="lp-card">
+        <div class="lp-flag">🇬🇧</div>
+        <div class="lp-lang">English</div>
+        <div class="lp-score-row"><span class="lp-score-name">IELTS Overall</span><span class="lp-score-val">Band 7.0</span></div>
+        <div class="lp-bar-track"><div class="lp-bar-fill" style="width:87%"></div></div>
+        <div class="lp-cert">Listening 8.0 · Reading 6.0 · Writing 6.0 · Speaking 8.0</div>
+      </div>
+      <div class="lp-card">
+        <div class="lp-flag">🇷🇺</div>
+        <div class="lp-lang">Russian</div>
+        <div class="lp-score-row"><span class="lp-score-name">Proficiency</span><span class="lp-score-val">C1 Advanced</span></div>
+        <div class="lp-bar-track"><div class="lp-bar-fill" style="width:88%"></div></div>
+      </div>
+    </div>
+
+    <div class="tags">
+      <span class="tag">Interpretation</span><span class="tag">Project Management</span>
+      <span class="tag">Cross-cultural</span><span class="tag">Government Forums</span>
+      <span class="tag">Exchange Alumni · Korea</span>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-solid" onclick="openExp('en')">Work Experience</button>
+      <button class="btn" onclick="openPhotos()">Interpreter Gallery</button>
+      <a class="btn" href="CV_Kuralay_Kiyasbek.pdf" download>Download CV ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ KAZAKH ═══ -->
+<section class="panel kk" id="panel-kk">
+  <div class="inner">
+    <div class="deco-line"><span>Таныстыру</span></div>
+    <h1 class="greeting">Сәлеметсіз бе,<br>мен <em>Құралай Қиясбек</em></h1>
+    <p class="name">IT жоба менеджері · Кәсіби аудармашы</p>
+    <p class="intro-text">
+      Мен <strong>кәсіби аудармашы және IT жоба менеджерімін</strong> — қазақ, қытай, орыс
+      және ағылшын тілдерінде еркін сөйлеймін. Мемлекеттік іс-шараларда,
+      халықаралық бизнес-форумдарда және IT стартаптарда тәжірибем бар.
+    </p>
+    <div class="details">
+      <div class="detail-item"><div class="detail-label">Қала</div><div class="detail-value">Астана, Қазақстан</div></div>
+      <div class="detail-item"><div class="detail-label">Тілдер</div><div class="detail-value">ҚАЗ · ҚЫТ · ОРЫ · АҒЫ</div></div>
+      <div class="detail-item"><div class="detail-label">Білім</div><div class="detail-value">Astana IT University</div></div>
+      <div class="detail-item"><div class="detail-label">Байланыс</div><div class="detail-value">kiyasbekk@gmail.com</div></div>
+    </div>
+    <div class="deco-line" style="margin-bottom:1.2rem"><span>Тіл деңгейі</span></div>
+    <div class="lang-prof">
+      <div class="lp-card"><div class="lp-flag">🇰🇿</div><div class="lp-lang">Қазақ тілі</div><div class="lp-score-row"><span class="lp-score-name">Ана тілі</span><span class="lp-score-val">Туған тіл</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:100%"></div></div></div>
+      <div class="lp-card"><div class="lp-flag">🇨🇳</div><div class="lp-lang">Қытай тілі</div><div class="lp-score-row"><span class="lp-score-name">Жалпы балл</span><span class="lp-score-val">HSK 6 · 256/300</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:85%"></div></div><div class="lp-cert">Тыңдау 90 · Оқу 91 · Жазу 75</div></div>
+      <div class="lp-card"><div class="lp-flag">🇬🇧</div><div class="lp-lang">Ағылшын тілі</div><div class="lp-score-row"><span class="lp-score-name">IELTS</span><span class="lp-score-val">7.0 балл</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:87%"></div></div><div class="lp-cert">Тыңдау 8.0 · Оқу 6.0 · Жазу 6.0 · Сөйлеу 8.0</div></div>
+      <div class="lp-card"><div class="lp-flag">🇷🇺</div><div class="lp-lang">Орыс тілі</div><div class="lp-score-row"><span class="lp-score-name">Деңгей</span><span class="lp-score-val">C1</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:88%"></div></div></div>
+    </div>
+    <div class="tags"><span class="tag">Аудармашы</span><span class="tag">Жоба менеджменті</span><span class="tag">Халықаралық тәжірибе</span></div>
+    <div class="action-row">
+      <button class="btn btn-solid" onclick="openExp('kk')">Жұмыс тәжірибесі</button>
+      <button class="btn" onclick="openPhotos()">Аудармашы галереясы</button>
+      <a class="btn" href="CV_Kuralay_Kiyasbek.pdf" download>CV жүктеу ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RUSSIAN ═══ -->
+<section class="panel ru" id="panel-ru">
+  <div class="inner">
+    <div class="deco-line"><span>О себе</span></div>
+    <h1 class="greeting">Здравствуйте,<br>я <em>Куралай Киясбек</em></h1>
+    <p class="name">IT-менеджер проектов · Бизнес-переводчик</p>
+    <p class="intro-text">
+      Я <strong>профессиональный переводчик и IT-менеджер проектов</strong>, свободно владею
+      казахским, китайским, русским и английским языками. Имею опыт работы
+      на государственных форумах, международных бизнес-мероприятиях и в IT-стартапах.
+    </p>
+    <div class="details">
+      <div class="detail-item"><div class="detail-label">Город</div><div class="detail-value">Астана, Казахстан</div></div>
+      <div class="detail-item"><div class="detail-label">Языки</div><div class="detail-value">КАЗ · КИТ · РУС · АНГ</div></div>
+      <div class="detail-item"><div class="detail-label">Образование</div><div class="detail-value">Astana IT University</div></div>
+      <div class="detail-item"><div class="detail-label">Контакт</div><div class="detail-value">kiyasbekk@gmail.com</div></div>
+    </div>
+    <div class="deco-line" style="margin-bottom:1.2rem"><span>Уровень языков</span></div>
+    <div class="lang-prof">
+      <div class="lp-card"><div class="lp-flag">🇰🇿</div><div class="lp-lang">Казахский</div><div class="lp-score-row"><span class="lp-score-name">Родной</span><span class="lp-score-val">Родной язык</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:100%"></div></div></div>
+      <div class="lp-card"><div class="lp-flag">🇨🇳</div><div class="lp-lang">Китайский</div><div class="lp-score-row"><span class="lp-score-name">Итого</span><span class="lp-score-val">HSK 6 · 256/300</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:85%"></div></div><div class="lp-cert">Аудирование 90 · Чтение 91 · Письмо 75</div></div>
+      <div class="lp-card"><div class="lp-flag">🇬🇧</div><div class="lp-lang">Английский</div><div class="lp-score-row"><span class="lp-score-name">IELTS</span><span class="lp-score-val">7.0 балла</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:87%"></div></div><div class="lp-cert">Аудирование 8.0 · Чтение 6.0 · Письмо 6.0 · Речь 8.0</div></div>
+      <div class="lp-card"><div class="lp-flag">🇷🇺</div><div class="lp-lang">Русский</div><div class="lp-score-row"><span class="lp-score-name">Уровень</span><span class="lp-score-val">C1</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:88%"></div></div></div>
+    </div>
+    <div class="tags"><span class="tag">Перевод</span><span class="tag">Управление проектами</span><span class="tag">Международный опыт</span></div>
+    <div class="action-row">
+      <button class="btn btn-solid" onclick="openExp('ru')">Опыт работы</button>
+      <button class="btn" onclick="openPhotos()">Галерея переводчика</button>
+      <a class="btn" href="CV_Kuralay_Kiyasbek.pdf" download>Скачать CV ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CHINESE ═══ -->
+<section class="panel zh" id="panel-zh">
+  <div class="inner">
+    <div class="deco-line"><span>自我介绍</span></div>
+    <h1 class="greeting">您好，<br>我是<em>КК</em></h1>
+    <p class="name">IT项目经理 · 职业商务翻译</p>
+    <p class="intro-text">
+      我是一名<strong>职业商务口译员兼IT项目经理</strong>，精通哈萨克语、中文、俄语和英语。
+      曾服务于政府间合作会议、国际商务论坛及科技创业项目，致力于以语言架桥、以沟通创造价值。
+    </p>
+    <div class="details">
+      <div class="detail-item"><div class="detail-label">所在城市</div><div class="detail-value">哈萨克斯坦 · 阿斯塔纳</div></div>
+      <div class="detail-item"><div class="detail-label">语言能力</div><div class="detail-value">哈 · 中 · 俄 · 英</div></div>
+      <div class="detail-item"><div class="detail-label">教育背景</div><div class="detail-value">阿斯塔纳IT大学</div></div>
+      <div class="detail-item"><div class="detail-label">联系方式</div><div class="detail-value">kiyasbekk@gmail.com</div></div>
+    </div>
+    <div class="deco-line" style="margin-bottom:1.2rem"><span>语言水平</span></div>
+    <div class="lang-prof">
+      <div class="lp-card"><div class="lp-flag">🇰🇿</div><div class="lp-lang" style="font-family:'Noto Sans SC',serif">哈萨克语</div><div class="lp-score-row"><span class="lp-score-name" style="font-family:'Noto Sans SC',serif">母语</span><span class="lp-score-val">Native</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:100%"></div></div></div>
+      <div class="lp-card"><div class="lp-flag">🇨🇳</div><div class="lp-lang" style="font-family:'Noto Sans SC',serif">中文</div><div class="lp-score-row"><span class="lp-score-name" style="font-family:'Noto Sans SC',serif">总分</span><span class="lp-score-val">HSK六级 · 256/300</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:85%"></div></div><div class="lp-cert" style="font-family:'Noto Sans SC',serif">听力90 · 阅读91 · 书写75</div></div>
+      <div class="lp-card"><div class="lp-flag">🇬🇧</div><div class="lp-lang" style="font-family:'Noto Sans SC',serif">英语</div><div class="lp-score-row"><span class="lp-score-name" style="font-family:'Noto Sans SC',serif">雅思</span><span class="lp-score-val">总分 7.0</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:87%"></div></div><div class="lp-cert" style="font-family:'Noto Sans SC',serif">听力8.0 · 阅读6.0 · 写作6.0 · 口语8.0</div></div>
+      <div class="lp-card"><div class="lp-flag">🇷🇺</div><div class="lp-lang" style="font-family:'Noto Sans SC',serif">俄语</div><div class="lp-score-row"><span class="lp-score-name" style="font-family:'Noto Sans SC',serif">水平</span><span class="lp-score-val">C1高级</span></div><div class="lp-bar-track"><div class="lp-bar-fill" style="width:88%"></div></div></div>
+    </div>
+    <div class="tags"><span class="tag">商务口译</span><span class="tag">项目管理</span><span class="tag">跨文化交流</span><span class="tag">政府论坛</span></div>
+    <div class="action-row">
+      <button class="btn btn-solid" onclick="openExp('zh')">工作经历</button>
+      <button class="btn" onclick="openPhotos()">口译员相册</button>
+      <a class="btn" href="CV_Kuralay_Kiyasbek.pdf" download>下载简历 ↓</a>
+    </div>
+  </div>
+</section>
+
+<footer><span id="footer-text">Four languages · One voice</span></footer>
+
+<!-- ═══ WORK EXPERIENCE MODAL ═══ -->
+<div class="modal-overlay" id="exp-modal" onclick="closeOnOverlay(event,'exp-modal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('exp-modal')">✕</button>
+    <div class="modal-lang-tabs">
+      <button class="modal-tab active" onclick="switchExpLang('en',this)">English</button>
+      <button class="modal-tab" onclick="switchExpLang('kk',this)">Қазақша</button>
+      <button class="modal-tab" onclick="switchExpLang('ru',this)">Русский</button>
+      <button class="modal-tab" onclick="switchExpLang('zh',this)">中文</button>
+    </div>
+    <!-- EN -->
+    <div class="exp-lang-content active" id="exp-en">
+      <div class="modal-title">Work Experience</div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Freelance Business Interpreter & Translator</span><span class="exp-period">2018 — Present</span></div>
+        <div class="exp-org">Independent · Astana, Kazakhstan</div>
+        <ul class="exp-bullets">
+          <li>Chinese–Kazakh–Russian–English interpretation for high-level government and corporate meetings.</li>
+          <li>Worked with ministries, universities, and multinational enterprises across trade, innovation and tourism sectors.</li>
+          <li>Live simultaneous interpretation for Hunan TV's international show (Voice Beyond Horizon, with Dimash Kudaibergen).</li>
+        </ul>
+        <div class="exp-sub-title">Key Events</div>
+        <div class="event-list">
+          <span class="event-chip">Kazakh–Chinese Intergovernmental Subcommittee on Innovation</span>
+          <span class="event-chip">Hangzhou–Kazakhstan Business Forum</span>
+          <span class="event-chip">Astana Int'l University × Jiangsu Ocean University</span>
+          <span class="event-chip">Kazakh–Chinese Tourism Business Dialogue</span>
+          <span class="event-chip">Astana Auto & Machinery Expo 2023 & 2024</span>
+          <span class="event-chip">Interlight Central Asia</span>
+          <span class="event-chip">International Flower Expo (EN–RU–KK)</span>
+          <span class="event-chip">Xi'an–Kazakhstan Trade & Economic Forum</span>
+          <span class="event-chip">Xinjiang Delegation Visit (KZ·UZ·KG)</span>
+          <span class="event-chip">2024 China–Central Asia Human Rights Forum</span>
+          <span class="event-chip">KazEnergy · Kazakh-Chinese Energy Meeting</span>
+          <span class="event-chip">National Minister Visit · Seitkali Agri University</span>
+          <span class="event-chip">Astana Voice 2018</span>
+        </div>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">IT Project Manager Intern</span><span class="exp-period">Feb 2023 — May 2023</span></div>
+        <div class="exp-org">Corporate Foundation «El Umiti» · Astana</div>
+        <ul class="exp-bullets">
+          <li>Developed and maintained project documentation and workflows in Notion.</li>
+          <li>Pre-launch testing using Microsoft Clarity & Chrome Inspect based on Figma alignment.</li>
+          <li>Contributed to successful market launch of the "Birge Oqy" learning app.</li>
+        </ul>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Project Manager Intern</span><span class="exp-period">Jun 2022 — Aug 2022</span></div>
+        <div class="exp-org">Proportunity Management Company Ltd. · Astana</div>
+        <ul class="exp-bullets">
+          <li>Led end-to-end planning of the "Teen Million" youth entrepreneurship project (ages 14–20).</li>
+          <li>Organised workshops on business fundamentals and startup development for 30 participants.</li>
+          <li>Mentored participants on business ideation and investor pitching.</li>
+        </ul>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Volunteer — Eurasian Business Club</span><span class="exp-period">2022 — 2023</span></div>
+        <div class="exp-org">Astana</div>
+        <ul class="exp-bullets">
+          <li>Provided strategic insights on potential markets and risks for cross-regional initiatives.</li>
+          <li>Coordinated business webinars enhancing startup engagement across Europe and Asia.</li>
+        </ul>
+      </div>
+    </div>
+    <!-- KK -->
+    <div class="exp-lang-content" id="exp-kk">
+      <div class="modal-title">Жұмыс тәжірибесі</div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Фриланс іскери аудармашы</span><span class="exp-period">2018 — қазіргі уақытқа дейін</span></div>
+        <div class="exp-org">Тәуелсіз · Астана, Қазақстан</div>
+        <ul class="exp-bullets">
+          <li>Мемлекеттік және корпоративтік жоғары деңгейлі кездесулерде қытай–қазақ–орыс–ағылшын тілдерінде аударма.</li>
+          <li>Министрліктер, университеттер және халықаралық компаниялармен жұмыс.</li>
+          <li>Хунань ТВ-дағы «声起地平线» іс-шарасында (Димаш Құдайбергенмен) тікелей синхронды аударма.</li>
+        </ul>
+        <div class="exp-sub-title">Негізгі іс-шаралар</div>
+        <div class="event-list">
+          <span class="event-chip">Қазақ–Қытай үкіметаралық инновация жөніндегі кіші комитет</span>
+          <span class="event-chip">Ханчжоу–Қазақстан бизнес-форумы</span>
+          <span class="event-chip">Астана Халықаралық Университеті × Цзянсу Мұхит Университеті</span>
+          <span class="event-chip">Астана Авто-Механика Экспо 2023 & 2024</span>
+          <span class="event-chip">2024 Қытай–Орталық Азия адам құқықтары форумы</span>
+          <span class="event-chip">Халықаралық гүл байқауы</span>
+        </div>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">IT жоба менеджері тәжірибешісі</span><span class="exp-period">2023 ақпан — 2023 мамыр</span></div>
+        <div class="exp-org">«Ел Үміті» корпоративтік қоры · Астана</div>
+        <ul class="exp-bullets"><li>Notion-да жоба құжаттамасын жасадым.</li><li>«Бірге Оқы» қосымшасының нарыққа шығарылуына үлес қостым.</li></ul>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Жоба менеджері тәжірибешісі</span><span class="exp-period">2022 маусым — тамыз</span></div>
+        <div class="exp-org">Proportunity Management Company Ltd. · Астана</div>
+        <ul class="exp-bullets"><li>«Жас Миллион» жастар кәсіпкерлік жобасын іске асырдым.</li><li>30 қатысушыға арналған семинарлар өткіздім.</li></ul>
+      </div>
+    </div>
+    <!-- RU -->
+    <div class="exp-lang-content" id="exp-ru">
+      <div class="modal-title">Опыт работы</div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Фриланс бизнес-переводчик</span><span class="exp-period">2018 — настоящее время</span></div>
+        <div class="exp-org">Независимый · Астана, Казахстан</div>
+        <ul class="exp-bullets">
+          <li>Синхронный и последовательный перевод (китайский–казахский–русский–английский) на высокоуровневых мероприятиях.</li>
+          <li>Работа с министерствами, университетами и международными компаниями.</li>
+          <li>Прямой синхронный перевод на шоу Hunan TV совместно с Димашом Кудайберегеном.</li>
+        </ul>
+        <div class="exp-sub-title">Ключевые мероприятия</div>
+        <div class="event-list">
+          <span class="event-chip">Казахско-Китайский межправительственный подкомитет по инновациям</span>
+          <span class="event-chip">Бизнес-форум Ханчжоу–Казахстан</span>
+          <span class="event-chip">Авто-Механика Астана 2023 & 2024</span>
+          <span class="event-chip">2024 Форум по правам человека Китай–Центральная Азия</span>
+          <span class="event-chip">Форум KazEnergy · Казахско-Китайские переговоры</span>
+          <span class="event-chip">Международная выставка цветов</span>
+        </div>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Стажёр IT-менеджера проектов</span><span class="exp-period">Февраль–Май 2023</span></div>
+        <div class="exp-org">Корпоративный фонд «Ел Үміті» · Астана</div>
+        <ul class="exp-bullets"><li>Документация проектов в Notion, тестирование UI/UX по макетам Figma.</li><li>Участие в запуске приложения «Birge Oqy».</li></ul>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role">Стажёр менеджера проектов</span><span class="exp-period">Июнь–Август 2022</span></div>
+        <div class="exp-org">Proportunity Management Company Ltd. · Астана</div>
+        <ul class="exp-bullets"><li>Планирование и запуск проекта «Молодой миллион» для 30 участников.</li><li>Анализ бизнес-процессов и сбор требований.</li></ul>
+      </div>
+    </div>
+    <!-- ZH -->
+    <div class="exp-lang-content" id="exp-zh">
+      <div class="modal-title" style="font-family:'Noto Sans SC',serif">工作经历</div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role" style="font-family:'Noto Sans SC',serif">自由职业商务口译员</span><span class="exp-period">2018年 — 至今</span></div>
+        <div class="exp-org">独立口译 · 哈萨克斯坦阿斯塔纳</div>
+        <ul class="exp-bullets" style="font-family:'Noto Sans SC',serif;font-size:.9rem">
+          <li>为政府及企业高级会议提供中–哈–俄–英同声传译及交替传译。</li>
+          <li>服务于多个部委、大学及跨国企业，涵盖贸易、创新与旅游领域。</li>
+          <li>在湖南卫视《声起地平线》节目（迪玛希参演）中担任现场同声传译。</li>
+        </ul>
+        <div class="exp-sub-title">重要口译经历</div>
+        <div class="event-list" style="font-family:'Noto Sans SC',serif;font-size:.75rem">
+          <span class="event-chip">哈中政府间创新合作分委会</span>
+          <span class="event-chip">杭州-哈萨克斯坦商汇</span>
+          <span class="event-chip">阿斯塔纳国际大学×江苏海洋大学签约</span>
+          <span class="event-chip">阿斯塔纳汽车机械展2023&2024</span>
+          <span class="event-chip">2024年中国-中亚人权发展论坛</span>
+          <span class="event-chip">KazEnergy哈中能源会议</span>
+          <span class="event-chip">国际花卉博览会</span>
+          <span class="event-chip">西安-哈萨克斯坦经贸推介会</span>
+          <span class="event-chip">新疆代表团访问哈乌吉三国</span>
+        </div>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role" style="font-family:'Noto Sans SC',serif">IT项目经理实习生</span><span class="exp-period">2023年2月—5月</span></div>
+        <div class="exp-org">«El Umiti» 企业基金会 · 阿斯塔纳</div>
+        <ul class="exp-bullets" style="font-family:'Noto Sans SC',serif;font-size:.9rem"><li>在Notion上开发并维护项目文档，进行UI/UX对齐测试。</li><li>参与"Birge Oqy"学习应用程序的成功上市。</li></ul>
+      </div>
+      <div class="exp-item">
+        <div class="exp-header"><span class="exp-role" style="font-family:'Noto Sans SC',serif">项目经理实习生</span><span class="exp-period">2022年6月—8月</span></div>
+        <div class="exp-org">Proportunity Management Company Ltd. · 阿斯塔纳</div>
+        <ul class="exp-bullets" style="font-family:'Noto Sans SC',serif;font-size:.9rem"><li>主导"百万青年"创业项目全流程规划与执行。</li><li>为30名参与者组织创业开发工作坊。</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PHOTO GALLERY MODAL ═══ -->
+<div class="modal-overlay" id="photo-modal" onclick="closeOnOverlay(event,'photo-modal')">
+  <div class="modal" style="max-width:900px">
+    <button class="modal-close" onclick="closeModal('photo-modal')">✕</button>
+    <div class="modal-title" id="photo-modal-title">Interpreter Gallery</div>
+    <div class="photo-grid" id="photo-grid"></div>
+  </div>
+</div>
+
+<!-- ═══ LIGHTBOX ═══ -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)">‹</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lightbox-caption" id="lb-caption"></div>
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)">›</button>
+</div>
+
+<script>
+const bgChars={en:'K',kk:'Қ',ru:'К',zh:'桥'};
+const footerTexts={en:'Four languages · One voice',kk:'Төрт тіл · Бір дауыс',ru:'Четыре языка · Один голос',zh:'四种语言 · 一个声音'};
+let currentLang='en';
+
+const PHOTOS=[
+  {src:'photos/IMG_2098.jpg',    cap:'Zhejiang Delegation Meeting · Kazakhstan Temir Zholy'},
+  {src:'photos/IMG_4953.jpg',    cap:'AMAL Biocare Exhibition · International Trade Fair'},
+  {src:'photos/photo_heic.jpg',  cap:'Voice Beyond Horizon · Hunan TV Production Team'},
+  {src:'photos/a3bad5bee58547a46a293aaf65f34ae6.jpg', cap:'Kazakhstan Temir Zholy · Kazakh-Chinese Meeting'},
+  {src:'photos/IMG_2117.jpg',    cap:'International Flower Expo · Dutch Exhibitor'},
+  {src:'photos/IMG_9687.jpg',    cap:'2024 China–Central Asia Human Rights Forum · Astana'},
+  {src:'photos/IMG_1016.jpg',    cap:'Ministry Delegation · Astana'},
+  {src:'photos/IMG_0889.jpg',    cap:'Voice Beyond Horizon · Full Production Team'},
+  {src:'photos/c0206983-05e3-476c-9eb4-69805ec054de.jpg', cap:'With Dimash Kudaibergen · Voice Beyond Horizon'},
+  {src:'photos/IMG_8186.jpg',    cap:'Xinjiang Delegation Site Visit · Infrastructure Project'},
+  {src:'photos/4ad6d7df3ad56b98c14b28cd3e48e8b2.jpg', cap:'International Flower Expo · Dutch & UK Exhibitors'},
+  {src:'photos/IMG_9748.jpg',    cap:'Guiding Chinese Delegation · Museum Visit'},
+  {src:'photos/IMG_9199.jpg',    cap:'International Flower Expo · Kazakh Cultural Dress'},
+  {src:'photos/IMG_5588.jpg',    cap:'KazEnergy · Kazakh-Chinese Energy Meeting'},
+  {src:'photos/c49bebf1-56fd-405c-b1bc-0ac337d89c9d.jpg', cap:'Xinjiang Delegation · Samarkand Welcome'},
+  {src:'photos/IMG_9228.jpg',    cap:'Business Interpretation Event'},
+];
+
+let lbIdx=0;
+
+function buildPhotoGrid(){
+  const grid=document.getElementById('photo-grid');
+  grid.innerHTML=PHOTOS.map((p,i)=>`
+    <div class="photo-item" onclick="openLightbox(${i})">
+      <img src="${p.src}" alt="${p.cap}" loading="lazy">
+      <div class="photo-caption">${p.cap}</div>
+    </div>`).join('');
+}
+
+function openLightbox(i){
+  lbIdx=i;
+  document.getElementById('lightbox').classList.add('open');
+  document.getElementById('lb-img').src=PHOTOS[i].src;
+  document.getElementById('lb-caption').textContent=PHOTOS[i].cap;
+  document.body.style.overflow='hidden';
+}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open');document.body.style.overflow='';}
+function lbNav(d){lbIdx=(lbIdx+d+PHOTOS.length)%PHOTOS.length;openLightbox(lbIdx);}
+
+function switchLang(lang,btn){
+  currentLang=lang;
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('active','visible');p.style.display='none';});
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const panel=document.getElementById('panel-'+lang);
+  panel.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>panel.classList.add('active','visible')));
+  document.getElementById('bgChar').textContent=bgChars[lang]||'K';
+  document.getElementById('footer-text').textContent=footerTexts[lang];
+}
+
+function openExp(lang){
+  document.getElementById('exp-modal').classList.add('open');
+  document.body.style.overflow='hidden';
+  const l=lang||currentLang;
+  document.querySelectorAll('.exp-lang-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('exp-'+l).classList.add('active');
+  document.querySelectorAll('.modal-tab').forEach(t=>{
+    t.classList.toggle('active',t.getAttribute('onclick').includes("'"+l+"'"));
+  });
+}
+function switchExpLang(lang,btn){
+  document.querySelectorAll('.exp-lang-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('exp-'+lang).classList.add('active');
+  document.querySelectorAll('.modal-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+function openPhotos(){
+  if(!document.getElementById('photo-grid').children.length)buildPhotoGrid();
+  document.getElementById('photo-modal').classList.add('open');
+  const titles={en:'Interpreter Gallery',kk:'Аудармашы галереясы',ru:'Галерея переводчика',zh:'口译员相册'};
+  document.getElementById('photo-modal-title').textContent=titles[currentLang]||titles.en;
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+function closeOnOverlay(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal('exp-modal');closeModal('photo-modal');closeLightbox();}
+  if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='ArrowRight')lbNav(1);
+});
+requestAnimationFrame(()=>requestAnimationFrame(()=>document.getElementById('panel-en').classList.add('visible')));
+</script>
+</body>
+</html>
